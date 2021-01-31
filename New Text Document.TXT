@@ -1,0 +1,85 @@
+byte count = 0;
+byte Digits[] = {0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7c,0x07,0x7f,0x67,B01110110,B01000000};
+               // 0    1     2    3    4    5    6   7    8    9     10 (H)    11 (-)  -> האיברים 10 ו11 במערך מכילים את היצוג של ה בסגמנט 7
+  
+
+//משתנים לחיישן מרחק 
+const int TRIG_PIN  = 8; 
+const int ECHO_PIN  = 9;
+
+//משתנה לחישן אור
+const int ldrPin = A0; 
+//משתניים ללדים
+int pin13=13;
+int pin12=12;
+int pin11=11;
+//משתנה לחיישן זמזם
+int buzzer10 = 10;
+
+void setup() {
+    DDRD  = B11111111;  //כל הנבחרים אוטפוט 
+    PORTD = B00000000;   //כולם כבויים
+
+    /*Serial.begin(9600);
+    while(!Serial){}*/
+    
+    pinMode(TRIG_PIN, OUTPUT);//משתה זריקת קול חישן הוא אוטפוט
+    digitalWrite(TRIG_PIN, LOW);//משתנה חישן אור מכובה
+    pinMode(ECHO_PIN, INPUT);//משתנה החזר קול למדידת מרחק הוא אינפוט
+
+    pinMode(ldrPin, INPUT);//משתנה חיישן אור אינפוט
+    pinMode(buzzer10, OUTPUT);//משתנה זמזם אינפוט
+    for(int i = 11 ; i<14;i++)//משתני הלדים
+    {
+      pinMode(i,OUTPUT);
+      digitalWrite(i,LOW);
+    }
+}
+void loop() 
+{  
+    noTone(buzzer10);
+    digitalWrite(pin13,LOW);
+    digitalWrite(pin12,LOW);
+    digitalWrite(pin11,LOW);
+    unsigned long duration,inches,cm,cm1;//משתני עזר לחישוב מרחק
+    digitalWrite(TRIG_PIN, HIGH);//הפעלת חישן מרחק 
+    delayMicroseconds(10);//יצירת דילי
+    digitalWrite(TRIG_PIN, LOW);//כיבוי חישן 
+    duration = pulseIn(ECHO_PIN, HIGH);//הכנסת תוצאה למשתנה מרחק 
+    cm=int(duration / 58.77);//המרה לס"מ
+    cm1=duration / 58.77;
+    int ldrStatus = analogRead(ldrPin); //עוצמת אור
+    if(ldrStatus>200){//במידה והאור דלוק
+      //Serial.print(duration / 58.77);
+      //Serial.println("cm");
+      if(cm1<2){//וגם מרחק קטן מ2 סמ
+          digitalWrite(pin13,HIGH);
+          tone(buzzer10,1000);
+       }
+        if(cm1<4 && cm1>=2){//וגם מרחק בין 2-4 סמ
+          digitalWrite(pin12,HIGH);
+        }
+        if(cm1>=4){//וגם מעל 4 סמ
+          digitalWrite(pin11,HIGH);
+        }
+        if(cm1>=10)
+           PORTD =Digits[11] ;
+        else  
+          PORTD = Digits[cm];
+        
+     }
+     else{
+         digitalWrite(pin13,HIGH);//הדלקת כל הלדים
+         digitalWrite(pin12,HIGH);
+         digitalWrite(pin11,HIGH);
+         PORTD =Digits[10] ;//הדפסת H בסגמנט 7
+         for(int i=1;i<4;i++)//זמזם מופעל בשלושה צלילים שונים
+         {
+           tone(buzzer10,i*1000);
+           delay(1000);   
+           noTone(buzzer10);
+         }
+         //Serial.println("DARK");      
+     }
+    delay(500);
+}
